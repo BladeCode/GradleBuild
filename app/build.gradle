@@ -1,36 +1,97 @@
 //声明是Android程序
 apply plugin: 'com.android.application'
 
+//编译时间
+def releaseTime() {
+    return new Date().format('yyyy-MM-dd', TimeZone.getTimeZone('UTC'))
+}
+
 android {
     //编译SDK的版本
-    compileSdkVersion 23
+    compileSdkVersion rootProject.ext.android.compileSdkVersion
     //Build Tools的版本
-    buildToolsVersion "24.0.0"
+    buildToolsVersion rootProject.ext.android.buildToolsVersion
 
     defaultConfig {
         //应用包名
         applicationId "com.mhome.gradledeploy"
         //应用支撑最小SDK版本
-        minSdkVersion 14
+        minSdkVersion rootProject.ext.android.minSdkVersion
         //应用目标SDK版本
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
     }
+    //签名配置
+    signingConfigs {
+        release {
+            storeFile file(RELEASE_STORE_FILE)
+            storePassword RELEASE_STORE_PASSWORD
+            keyAlias RELEASE_KEY_ALIAS
+            keyPassword RELEASE_KEY_PASSWORD
+        }
+
+    }
+
     buildTypes {
         //预发布release版本
         release {
             //是否进行混淆
             minifyEnabled false
+            //是否启动zipAlign优化
+            zipAlignEnabled false
+            //是否移除无用的resource文件
+            shrinkResources true
             //混淆文件的位置
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //签名配置
+            signingConfig signingConfigs.release
+            applicationVariants.all { variant ->
+                if (variant.buildType.name.equals('release')) {
+                    variant.outputs.each { output ->
+                        def outputFile = output.outputFile
+                        if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                            def fileName = "${variant.flavorName}_V${defaultConfig.versionName}_${releaseTime()}.apk"
+                            output.outputFile = new File(outputFile.parent, fileName)
+                        }
+                    }
+                }
+            }
+
+            //多渠道配置
+            productFlavors.all { flavor ->
+                manifestPlaceholders.put("CHANNEL_ID_VALUE", name)
+            }
         }
     }
+
+    productFlavors {
+        dev {
+            applicationId 'com.mhome.debug'
+            //测试环境配置API接口地址
+            buildConfigField 'String', 'API_URL', '"http://xxx.debug"'
+            versionCode 101
+            versionName '1.0.1'
+        }
+        mhome {
+            applicationId 'com.mhome.gradledeploy'
+            //正式环境API接口地址
+            buildConfigField 'String', 'API_URL', '"http://xxx.official"'
+            versionCode 100
+            versionName '1.0.0'
+        }
+    }
+
+    lintOptions {
+        //在打包Release版本的时候进行检测,可以打开，这样报错还会显示出来
+        checkReleaseBuilds false
+        //abortOnError一定要设为false，这样即使有报错也不会停止打包了
+        abortOnError false
+    }
+
 }
 
 dependencies {
     //编译libs目录下的所有jar包
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:appcompat-v7:24.0.0'
 }
