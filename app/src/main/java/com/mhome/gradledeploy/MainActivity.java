@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
-    String API_URL = BuildConfig.API_URL;
+    private String API_URL = BuildConfig.API_URL;
     private TextView mTextView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {

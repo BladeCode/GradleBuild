@@ -11,14 +11,20 @@ android {
     compileSdkVersion rootProject.ext.android.compileSdkVersion
     //Build Tools的版本
     buildToolsVersion rootProject.ext.android.buildToolsVersion
-
+    //默认配置（如果其他渠道没有特殊指定内容，会优先使用默认配置进行构建包）
     defaultConfig {
         //应用包名
         applicationId "com.mhome.gradledeploy"
+        //dex突破65535的限制
+        multiDexEnabled true
+        //正式环境API接口地址
+        buildConfigField 'String', 'API_URL', '"http://xxx.official"'
         //应用支撑最小SDK版本
         minSdkVersion rootProject.ext.android.minSdkVersion
         //应用目标SDK版本
         targetSdkVersion rootProject.ext.android.targetSdkVersion
+        versionCode 100
+        versionName '1.0.0'
     }
     //签名配置
     signingConfigs {
@@ -44,26 +50,41 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             //签名配置
             signingConfig signingConfigs.release
-            applicationVariants.all { variant ->
-                if (variant.buildType.name.equals('release')) {
-                    variant.outputs.each { output ->
-                        def outputFile = output.outputFile
-                        if (outputFile != null && outputFile.name.endsWith('.apk')) {
-                            def fileName = "${variant.flavorName}_V${defaultConfig.versionName}_${releaseTime()}.apk"
-                            output.outputFile = new File(outputFile.parent, fileName)
-                        }
-                    }
-                }
-            }
+        }
+    }
 
-            //多渠道配置
-            productFlavors.all { flavor ->
-                manifestPlaceholders.put("CHANNEL_ID_VALUE", name)
+    //重命名安装包
+    applicationVariants.all { variant ->
+        variant.outputs.each {
+            output ->
+                def outputFile = output.outputFile
+                if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                    def apkType = ""
+                    if (variant.flavorName.equals("mhome")){
+                        apkType = "mhome"
+                    }else if(variant.flavorName.equals("dev")){
+                        apkType = "dev"
+                    }
+                    def fileName = new File(output.outputFile.getParent(), apkType + "-V${variant.versionName}-${releaseTime()}.apk")
+                    output.outputFile = fileName
+                }
+        }
+    }
+
+    //删除unaligned apk
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            if (output.zipAlign != null) {
+                output.zipAlign.doLast {
+                    output.zipAlign.inputFile.delete()
+                }
             }
         }
     }
 
+    //渠道包
     productFlavors {
+        //测试环境专用
         dev {
             applicationId 'com.mhome.debug'
             //测试环境配置API接口地址
@@ -71,22 +92,23 @@ android {
             versionCode 101
             versionName '1.0.1'
         }
-        mhome {
-            applicationId 'com.mhome.gradledeploy'
-            //正式环境API接口地址
-            buildConfigField 'String', 'API_URL', '"http://xxx.official"'
-            versionCode 100
-            versionName '1.0.0'
-        }
+        //正式发布环境
+        mhome { }
     }
 
+    //多渠道配置
+    productFlavors.all { flavor ->
+        flavor.manifestPlaceholders = [CHANNEL_ID_VALUE: name]
+    }
+
+    //执行lint检查，有任何的错误或者警告提示，都会终止构建
     lintOptions {
+        disable 'MissingTranslation', 'ExtraTranslation'
         //在打包Release版本的时候进行检测,可以打开，这样报错还会显示出来
         checkReleaseBuilds false
         //abortOnError一定要设为false，这样即使有报错也不会停止打包了
         abortOnError false
     }
-
 }
 
 dependencies {
