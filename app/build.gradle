@@ -13,18 +13,12 @@ android {
     buildToolsVersion rootProject.ext.android.buildToolsVersion
     //默认配置（如果其他渠道没有特殊指定内容，会优先使用默认配置进行构建包）
     defaultConfig {
-        //应用包名
-        applicationId "com.mhome.gradledeploy"
         //dex突破65535的限制
         multiDexEnabled true
-        //正式环境API接口地址
-        buildConfigField 'String', 'API_URL', '"http://xxx.official"'
         //应用支撑最小SDK版本
         minSdkVersion rootProject.ext.android.minSdkVersion
         //应用目标SDK版本
         targetSdkVersion rootProject.ext.android.targetSdkVersion
-        versionCode 100
-        versionName '1.0.0'
     }
     //签名配置
     signingConfigs {
@@ -38,6 +32,22 @@ android {
     }
 
     buildTypes {
+
+        //调试debug版本
+        debug {
+            // 显示Log
+            buildConfigField 'boolean', 'LOG_DEBUG', 'true'
+            versionNameSuffix "-debug"
+            //是否进行混淆
+            minifyEnabled false
+            //是否启动zipAlign优化
+            zipAlignEnabled false
+            //是否移除无用的resource文件
+            shrinkResources false
+            //签名配置
+//            signingConfig signingConfigs.debug
+        }
+
         //预发布release版本
         release {
             //是否进行混淆
@@ -60,8 +70,8 @@ android {
                 def outputFile = output.outputFile
                 if (outputFile != null && outputFile.name.endsWith('.apk')) {
                     def apkType = ""
-                    if (variant.flavorName.equals("mhome")){
-                        apkType = "mhome"
+                    if (variant.flavorName.equals("rel")) {
+                        apkType = "rel"
                     }else if(variant.flavorName.equals("dev")){
                         apkType = "dev"
                     }
@@ -86,6 +96,7 @@ android {
     productFlavors {
         //测试环境专用
         dev {
+            //应用包名
             applicationId 'com.mhome.debug'
             //测试环境配置API接口地址
             buildConfigField 'String', 'API_URL', '"http://xxx.debug"'
@@ -93,7 +104,14 @@ android {
             versionName '1.0.1'
         }
         //正式发布环境
-        mhome { }
+        rel {
+            //应用包名
+            applicationId "com.mhome.gradledeploy"
+            //正式环境API接口地址
+            buildConfigField 'String', 'API_URL', '"http://xxx.official"'
+            versionCode 100
+            versionName '1.0.0'
+        }
     }
 
     //多渠道配置

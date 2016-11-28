@@ -21,3 +21,5 @@ include ':module-a',':module-b'
 * gradlew.bat 是windows下的批处理文件
 这两个文件的作用是根据gradle-wrapper.properties文件中distributionUrl下载对应的gradle版本。这样就可以保证在不同的环境下构建时都是使用统一的gradle，即使该环境没有安装gradle也可以，因为gradle wrapper会自动下载对应的gradle版本。
 
+## 详细使用及说明
+[wiki](https://github.com/BladeCode/GradleDeploy/wiki)
