@@ -1,0 +1,35 @@
+ext {
+    android = [
+            // 编译SDK的版本
+            compileSdkVersion: 28,
+            // Build Tools的版本
+            buildToolsVersion: "28.0.3",
+            // 应用支撑最小SDK版本
+            minSdkVersion    : 15,
+            // 应用目标SDK版本
+            targetSdkVersion : 28,
+    ]
+
+    version = [
+            androidSupportSdkVersion: "28.0.0",
+            espressoSdkVersion      : "2.2.2",
+    ]
+
+    dependencies = [
+            // support
+            "appcompat-v7"      : "com.android.support:appcompat-v7:${version["androidSupportSdkVersion"]}",
+            "design"            : "com.android.support:design:${version["androidSupportSdkVersion"]}",
+            "support-v4"        : "com.android.support:support-v4:${version["androidSupportSdkVersion"]}",
+            "cardview-v7"       : "com.android.support:cardview-v7:${version["androidSupportSdkVersion"]}",
+            "annotations"       : "com.android.support:support-annotations:${version["androidSupportSdkVersion"]}",
+            "recyclerview-v7"   : "com.android.support:recyclerview-v7:${version["androidSupportSdkVersion"]}",
+
+            // test
+            "junit"             : "junit:junit:4.12",
+            "androidJUnitRunner": "android.support.test.runner.AndroidJUnitRunner",
+            "runner"            : "com.android.support.test:runner:1.0.2",
+            "espresso-core"     : "com.android.support.test.espresso:espresso-core:${version["espressoSdkVersion"]}",
+            "espresso-contrib"  : "com.android.support.test.espresso:espresso-contrib:${version["espressoSdkVersion"]}",
+            "espresso-intents"  : "com.android.support.test.espresso:espresso-intents:${version["espressoSdkVersion"]}",
+    ]
+}

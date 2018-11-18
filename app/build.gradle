@@ -1,0 +1,187 @@
+apply plugin: 'com.android.application'
+
+// 编译时间
+static def releaseTime() {
+    return new Date().format('yyyy-MM-dd', TimeZone.getTimeZone('UTC'))
+}
+
+android {
+    // 编译SDK的版本
+    compileSdkVersion rootProject.ext.android.compileSdkVersion
+    // Build Tools的版本
+    buildToolsVersion rootProject.ext.android.buildToolsVersion
+    // 默认配置（如果其他渠道没有特殊指定内容，会优先使用默认配置进行构建包）
+    defaultConfig {
+        // dex突破65535的限制
+        multiDexEnabled true
+        // 应用支撑最小SDK版本
+        minSdkVersion rootProject.ext.android.minSdkVersion
+        // 应用目标SDK版本
+        targetSdkVersion rootProject.ext.android.targetSdkVersion
+        testInstrumentationRunner rootProject.ext.dependencies.androidJUnitRunner
+    }
+
+    // 签名配置
+    signingConfigs {
+        debug {
+            // 路径
+            storeFile file("debug.jks")
+            storePassword "123456"
+            keyAlias "debug"
+            keyPassword "123456"
+        }
+
+        release {
+            // 路径
+            storeFile file("debug.jks")
+            storePassword "123456"
+            keyAlias "debug"
+            keyPassword "123456"
+        }
+    }
+
+    buildTypes {
+
+        // 调试模式
+        debug {
+            // 是否进行混淆
+            minifyEnabled false
+            // 是否启动zipAlign优化
+            zipAlignEnabled false
+            // 是否移除无用的resource文件
+            shrinkResources false
+            // 签名配置
+            signingConfig signingConfigs.debug
+        }
+
+        // 发布模式
+        release {
+            // 是否进行混淆
+            minifyEnabled true
+            // 是否启动zipAlign优化
+            zipAlignEnabled true
+            // 是否移除无用的resource文件
+            shrinkResources true
+            // 混淆文件的位置
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // 签名配置
+            signingConfig signingConfigs.release
+        }
+    }
+
+    // 过滤非开发测试渠道debug模式包
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+        def isDebug = variant.buildType.debuggable
+        // To check for a certain build type, use variant.buildType.name == "<buildType>"
+        if (!names.contains("dev") && isDebug) {
+            // Gradle ignores any variants that satisfy the conditions above.
+            setIgnore(true)
+        }
+    }
+
+    // 重命名安装包
+    android.applicationVariants.all {
+        variant ->
+            variant.outputs.all {
+                output ->
+                    output.outputFileName = variant.flavorName + buildType.name +
+                            "_" + releaseTime() +
+                            ".apk"
+            }
+    }
+    // 定义维度（至少需要定义1个维度）
+    flavorDimensions "CHANNEL", "ENVIRONMENT"
+    // 定义不同特性的产品，比如：渠道包
+    productFlavors {
+
+        // 开发测试环境
+        dev {
+            dimension "ENVIRONMENT"
+            // 应用包名
+            applicationId 'org.incoder.debug'
+            // 开发测试渠道服务接口
+            buildConfigField 'String', 'API_URL', '"http://xxx.debug"'
+            versionCode 2018110601
+            versionName '0.1.0'
+        }
+
+        // 正式发布环境
+        official {
+            dimension "ENVIRONMENT"
+            // 应用包名
+            applicationId 'org.incoder.gradle'
+            // 开发测试渠道服务接口
+            buildConfigField 'String', 'API_URL', '"http://xxx.release"'
+            versionCode 2018110601
+            versionName '0.1.0'
+        }
+
+        local {
+            dimension "CHANNEL"
+        }
+
+        // 三星
+        samsung {
+            dimension "CHANNEL"
+        }
+
+        /*// 华为
+        huawei {
+            dimension "CHANNEL"
+        }
+
+        // 小米
+        mi {
+            dimension "CHANNEL"
+        }
+
+        // 魅族
+        meizu {
+            dimension "CHANNEL"
+        }*/
+
+        // 等等
+    }
+
+    // 多渠道配置
+    productFlavors.all { flavor ->
+        flavor.manifestPlaceholders = [CHANNEL_ID_VALUE: name]
+    }
+
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
+
+    dexOptions {
+        jumboMode true
+        javaMaxHeapSize "4g"
+    }
+
+    // 打包排除以下文件
+    packagingOptions {
+        exclude 'EMTA-INF/LICENSE'
+    }
+
+    // 指定项目编译JDK版本
+    compileOptions {
+        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // 执行lint检查，有任何的错误或者警告提示，都会终止构建
+    lintOptions {
+        disable 'MissingTranslation', 'ExtraTranslation'
+        // 在打包Release版本的时候进行检测,可以打开，这样报错还会显示出来
+        checkReleaseBuilds false
+        // abortOnError设为false，这样即使有报错也不会停止打包了
+        abortOnError false
+    }
+}
+
+dependencies {
+    // 编译libs目录下的所有jar包
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation rootProject.ext.dependencies["appcompat-v7"]
+    testImplementation rootProject.ext.dependencies["junit"]
+    androidTestImplementation rootProject.ext.dependencies["runner"]
+}
